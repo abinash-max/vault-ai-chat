@@ -87,7 +87,7 @@ export const TranslationPanel = ({
         <h3 className="text-lg font-semibold">Translation Panel</h3>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="space-y-6">
         {/* Input Text */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -120,7 +120,7 @@ export const TranslationPanel = ({
         </div>
 
         {/* Language Selection & Translate Button */}
-        <div className="space-y-4 flex flex-col justify-center">
+        <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Target Language</label>
             <Select value={selectedLanguage} onValueChange={onLanguageChange}>
@@ -143,7 +143,7 @@ export const TranslationPanel = ({
           <Button
             onClick={onTranslateInput}
             disabled={!inputText || !selectedLanguage || isTranslating}
-            className="vault-gradient text-primary-foreground transition-smooth hover:opacity-90 disabled:opacity-50"
+            className="vault-gradient text-primary-foreground transition-smooth hover:opacity-90 disabled:opacity-50 w-full"
           >
             {isTranslating ? (
               <div className="flex items-center gap-2">
