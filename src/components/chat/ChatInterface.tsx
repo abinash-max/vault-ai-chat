@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { TranslationPanel } from "./TranslationPanel";
 
 interface Message {
   id: string;
@@ -201,151 +200,185 @@ export const ChatInterface = () => {
 
   return (
     <div className="h-full flex flex-col gap-6">
-      {/* Translation Panel */}
-      <TranslationPanel
-        inputText={inputText}
-        onInputChange={setInputText}
-        translatedInput={translatedInput}
-        onTranslatedInputChange={setTranslatedInput}
-        selectedLanguage={selectedInputLanguage}
-        onLanguageChange={setSelectedInputLanguage}
-        isTranslating={isTranslatingInput}
-        onTranslateInput={handleTranslateInput}
-      />
+      {/* Input Section */}
+      <Card className="p-6 bg-card/50 backdrop-blur-sm border-border">
+        <div className="flex items-center gap-2 mb-4">
+          <User className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold">Your Message</h3>
+        </div>
+        
+        <div className="space-y-4">
+          {/* Language Selection */}
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-foreground">Translate to:</label>
+            <Select value={selectedInputLanguage} onValueChange={setSelectedInputLanguage}>
+              <SelectTrigger className="w-48 bg-input border-border transition-smooth focus:vault-border-glow">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border max-h-60">
+                {INDIAN_LANGUAGES.map((language) => (
+                  <SelectItem key={language.code} value={language.code}>
+                    <div className="flex flex-col">
+                      <span>{language.name}</span>
+                      <span className="text-xs text-muted-foreground">{language.nativeName}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {/* Generate Button */}
-      <div className="flex justify-center">
-        <Button
-          onClick={handleGenerate}
-          disabled={!inputText.trim() || isGenerating}
-          className="px-8 py-3 vault-gradient text-primary-foreground font-medium transition-smooth hover:opacity-90 disabled:opacity-50 vault-shadow"
-          size="lg"
-        >
-          {isGenerating ? (
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              <span>Generating...</span>
+          {/* Input with inline buttons */}
+          <div className="relative">
+            <Textarea
+              placeholder="Type your message here..."
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              className="min-h-[120px] bg-input border-border transition-smooth focus:vault-border-glow resize-none pr-24"
+            />
+            <div className="absolute bottom-3 right-3 flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleTranslateInput}
+                disabled={!inputText || !selectedInputLanguage || isTranslatingInput}
+                className="h-8 w-8 p-0 rounded-full hover:bg-primary/10"
+              >
+                {isTranslatingInput ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Languages className="w-4 h-4" />
+                )}
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleGenerate}
+                disabled={!inputText.trim() || isGenerating}
+                className="h-8 w-8 p-0 rounded-full vault-gradient text-primary-foreground hover:opacity-90"
+              >
+                {isGenerating ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Bot className="w-5 h-5" />
-              <span>Generate Response</span>
+          </div>
+
+          {/* Translated Input Display */}
+          {translatedInput && (
+            <div className="p-3 bg-secondary/30 rounded-lg border border-border">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-foreground">
+                  Translated ({INDIAN_LANGUAGES.find(l => l.code === selectedInputLanguage)?.name})
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(translatedInput, "Translated input")}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => speakText(translatedInput, selectedInputLanguage)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Volume2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+              <p className="text-sm">{translatedInput}</p>
             </div>
           )}
-        </Button>
-      </div>
+        </div>
+      </Card>
 
       {/* Output Section */}
       <Card className="p-6 bg-card/50 backdrop-blur-sm border-border">
         <div className="flex items-center gap-2 mb-4">
           <Bot className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold">AI Response & Translation</h3>
+          <h3 className="text-lg font-semibold">AI Response</h3>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Output Text */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">AI Response (English)</label>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(outputText, "AI response")}
-                  disabled={!outputText}
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => speakText(outputText, "en")}
-                  disabled={!outputText}
-                >
-                  <Volume2 className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
+        <div className="space-y-4">
+          {/* Language Selection */}
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-foreground">Translate to:</label>
+            <Select value={selectedOutputLanguage} onValueChange={setSelectedOutputLanguage}>
+              <SelectTrigger className="w-48 bg-input border-border transition-smooth focus:vault-border-glow">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border max-h-60">
+                {INDIAN_LANGUAGES.map((language) => (
+                  <SelectItem key={language.code} value={language.code}>
+                    <div className="flex flex-col">
+                      <span>{language.name}</span>
+                      <span className="text-xs text-muted-foreground">{language.nativeName}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Output with inline translate button */}
+          <div className="relative">
             <Textarea
               placeholder="AI response will appear here..."
               value={outputText}
-              className="min-h-[120px] bg-input border-border transition-smooth focus:vault-border-glow resize-none"
+              className="min-h-[120px] bg-input border-border transition-smooth focus:vault-border-glow resize-none pr-16"
               readOnly
             />
-          </div>
-
-          {/* Output Language Selection & Translate Button */}
-          <div className="space-y-4 flex flex-col justify-center">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Target Language</label>
-              <Select value={selectedOutputLanguage} onValueChange={setSelectedOutputLanguage}>
-                <SelectTrigger className="bg-input border-border transition-smooth focus:vault-border-glow">
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border max-h-60">
-                  {INDIAN_LANGUAGES.map((language) => (
-                    <SelectItem key={language.code} value={language.code}>
-                      <div className="flex flex-col">
-                        <span>{language.name}</span>
-                        <span className="text-xs text-muted-foreground">{language.nativeName}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              onClick={handleTranslateOutput}
-              disabled={!outputText || !selectedOutputLanguage || isTranslatingOutput}
-              className="vault-gradient text-primary-foreground transition-smooth hover:opacity-90 disabled:opacity-50"
-            >
-              {isTranslatingOutput ? (
-                <div className="flex items-center gap-2">
+            <div className="absolute bottom-3 right-3">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleTranslateOutput}
+                disabled={!outputText || !selectedOutputLanguage || isTranslatingOutput}
+                className="h-8 w-8 p-0 rounded-full hover:bg-primary/10"
+              >
+                {isTranslatingOutput ? (
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  <span>Translating...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
+                ) : (
                   <Languages className="w-4 h-4" />
-                  <span>Translate Response</span>
-                </div>
-              )}
-            </Button>
+                )}
+              </Button>
+            </div>
           </div>
 
-          {/* Translated Output */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">
-                Translated Response ({INDIAN_LANGUAGES.find(l => l.code === selectedOutputLanguage)?.name || "Select language"})
-              </label>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(translatedOutput, "Translated response")}
-                  disabled={!translatedOutput}
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => speakText(translatedOutput, selectedOutputLanguage)}
-                  disabled={!translatedOutput}
-                >
-                  <Volume2 className="w-3 h-3" />
-                </Button>
+          {/* Translated Output Display */}
+          {translatedOutput && (
+            <div className="p-3 bg-secondary/30 rounded-lg border border-border">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-foreground">
+                  Translated ({INDIAN_LANGUAGES.find(l => l.code === selectedOutputLanguage)?.name})
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(translatedOutput, "Translated response")}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => speakText(translatedOutput, selectedOutputLanguage)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Volume2 className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
+              <p className="text-sm">{translatedOutput}</p>
             </div>
-            <Textarea
-              placeholder="Translated response will appear here..."
-              value={translatedOutput}
-              className="min-h-[120px] bg-input border-border transition-smooth focus:vault-border-glow resize-none"
-              readOnly
-            />
-          </div>
+          )}
         </div>
       </Card>
 
